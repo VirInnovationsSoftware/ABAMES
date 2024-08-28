@@ -87,6 +87,7 @@ def manual_tracker_TLD_main():
         sys.exit(1)
     
     while True:
+        start_time = time.perf_counter()
         ret, frame = vs.read()
         frame = cv2.resize(frame, (1280, 720))
 
@@ -137,6 +138,11 @@ def manual_tracker_TLD_main():
 
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+        # Measure the elapsed time
+        end_time = time.perf_counter()
+        elapsed_time_ms = (end_time - start_time) * 1000
+        print(f"TLD Time elapsed: {elapsed_time_ms:.2f} ms")
+
         cv2.putText(frame, "+", org, cv2.FONT_HERSHEY_SIMPLEX, fsize, (0, 0, 255), 2)
         cv2.imshow("frame", frame)
         cv2.setMouseCallback('frame', moused_click_handler)
@@ -173,6 +179,7 @@ def manual_tracker_CSRT_main():
         sys.exit(1)
     i=0
     while True:
+        start_time = time.perf_counter()
         ret, frame = vs.read()
         frame = cv2.resize(frame, (1280, 720))
 
@@ -238,6 +245,11 @@ def manual_tracker_CSRT_main():
                 #ser.write(binary_packet)
                 print(f"Sent: {char, az, chara, el}")
                 i=i+1
+
+        # Measure the elapsed time
+        end_time = time.perf_counter()
+        elapsed_time_ms = (end_time - start_time) * 1000
+        print(f"CSRT Time elapsed: {elapsed_time_ms:.2f} ms")
 
         cv2.putText(frame, "+", org, cv2.FONT_HERSHEY_SIMPLEX, fsize, (0, 0, 255), 2)
         cv2.imshow("frame", frame)
