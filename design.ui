@@ -35,6 +35,12 @@
     </property>
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
       <widget class="QWidget" name="Main">
        <widget class="QLabel" name="StreamLabel">
         <property name="geometry">
@@ -55,17 +61,18 @@
          <set>Qt::AlignCenter</set>
         </property>
        </widget>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="ConnectionStatusLabel">
         <property name="geometry">
          <rect>
           <x>2</x>
           <y>13</y>
-          <width>150</width>
+          <width>120</width>
           <height>24</height>
          </rect>
         </property>
         <property name="font">
          <font>
+          <family>Sans Serif</family>
           <pointsize>12</pointsize>
           <weight>75</weight>
           <bold>true</bold>
@@ -84,7 +91,7 @@
          <number>5</number>
         </property>
        </widget>
-       <widget class="QWidget" name="widget" native="true">
+       <widget class="QWidget" name="InfoPanelContainer" native="true">
         <property name="geometry">
          <rect>
           <x>652</x>
@@ -94,10 +101,10 @@
          </rect>
         </property>
         <property name="styleSheet">
-         <string notr="true">background:grey;</string>
+         <string notr="true">background:rgba(25, 25, 25, 255);</string>
         </property>
        </widget>
-       <widget class="QWidget" name="widget_2" native="true">
+       <widget class="QWidget" name="CursorControlContainer" native="true">
         <property name="geometry">
          <rect>
           <x>652</x>
@@ -107,10 +114,185 @@
          </rect>
         </property>
         <property name="styleSheet">
-         <string notr="true">background:grey;</string>
+         <string notr="true">background:rgba(25, 25, 25, 255);</string>
         </property>
+        <widget class="QPushButton" name="CursorUpBtn">
+         <property name="geometry">
+          <rect>
+           <x>79</x>
+           <y>16</y>
+           <width>64</width>
+           <height>64</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+	border-radius: 12px;
+	background: rgb(0, 0, 0);
+}
+QPushButton:hover{
+	background: rgb(5, 5, 5);
+}
+QPushButton:pressed{
+	background: rgb(20, 20, 20);
+}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../Downloads/keyboard_arrow_up_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</normaloff>../../Downloads/keyboard_arrow_up_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="CursorDownBtn">
+         <property name="geometry">
+          <rect>
+           <x>79</x>
+           <y>154</y>
+           <width>64</width>
+           <height>64</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+	border-radius: 12px;
+	background: rgb(0, 0, 0);
+}
+QPushButton:hover{
+	background: rgb(5, 5, 5);
+}
+QPushButton:pressed{
+	background: rgb(20, 20, 20);
+}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../Downloads/keyboard_arrow_down_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</normaloff>../../Downloads/keyboard_arrow_down_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="CursorRightBtn">
+         <property name="geometry">
+          <rect>
+           <x>148</x>
+           <y>85</y>
+           <width>64</width>
+           <height>64</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+	border-radius: 12px;
+	background: rgb(0, 0, 0);
+}
+QPushButton:hover{
+	background: rgb(5, 5, 5);
+}
+QPushButton:pressed{
+	background: rgb(20, 20, 20);
+}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../Downloads/keyboard_arrow_right_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</normaloff>../../Downloads/keyboard_arrow_right_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="CursorLeftBtn">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>85</y>
+           <width>64</width>
+           <height>64</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+	border-radius: 12px;
+	background: rgb(0, 0, 0);
+}
+QPushButton:hover{
+	background: rgb(5, 5, 5);
+}
+QPushButton:pressed{
+	background: rgb(20, 20, 20);
+}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../Downloads/keyboard_arrow_left_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</normaloff>../../Downloads/keyboard_arrow_left_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="CursorSaveBtn">
+         <property name="geometry">
+          <rect>
+           <x>79</x>
+           <y>85</y>
+           <width>64</width>
+           <height>64</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QPushButton{
+	border-radius: 12px;
+	background: rgb(0, 0, 0);
+}
+QPushButton:hover{
+	background: rgb(5, 5, 5);
+}
+QPushButton:pressed{
+	background: rgb(20, 20, 20);
+}</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../Downloads/bookmark_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</normaloff>../../Downloads/bookmark_32dp_FFFFFF_FILL0_wght700_GRAD0_opsz40.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
        </widget>
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="BatteryIndicatorLabel">
         <property name="geometry">
          <rect>
           <x>970</x>
@@ -121,6 +303,7 @@
         </property>
         <property name="font">
          <font>
+          <family>Sans Serif</family>
           <pointsize>12</pointsize>
           <weight>75</weight>
           <bold>true</bold>
@@ -141,6 +324,130 @@
         <property name="indent">
          <number>5</number>
         </property>
+       </widget>
+       <widget class="QWidget" name="ModeContainer" native="true">
+        <property name="geometry">
+         <rect>
+          <x>362</x>
+          <y>540</y>
+          <width>300</width>
+          <height>60</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="spacing">
+          <number>8</number>
+         </property>
+         <property name="leftMargin">
+          <number>4</number>
+         </property>
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="rightMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="ModeAutoBtn">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Sans Serif</family>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton{
+	background:rgb(50, 50, 50);
+	color:white; 
+	border:0px;
+	border-radius: 8px;
+}
+QPushButton:hover{
+	background:rgb(0, 100, 0);
+	color:rgb(180, 180, 180); 
+	border:0px;
+	border-radius: 8px;
+}
+QPushButton:pressed{
+	background:green;
+	color:white; 
+	border:0px;
+	border-radius: 8px;
+}</string>
+           </property>
+           <property name="text">
+            <string>auto</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="ModeManualBtn">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Sans Serif</family>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background:green;
+color:white; 
+border:0px;
+border-radius: 8px;
+</string>
+           </property>
+           <property name="text">
+            <string>manual</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="ModeJoystickBtn">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Sans Serif</family>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background:green;
+color:white; 
+border:0px;
+border-radius: 8px;
+</string>
+           </property>
+           <property name="text">
+            <string>joystick</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </widget>

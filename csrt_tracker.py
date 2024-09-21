@@ -3,7 +3,7 @@ import serial
 
 
 cap = cv2.VideoCapture(0)
-ser = serial.Serial("/dev/ttyACM0", 115200, timeout=0.5)
+ser = serial.Serial("/dev/tty", 115200, timeout=0.5)
 
 
 tracker = cv2.TrackerCSRT_create()
