@@ -1,13 +1,15 @@
-import socket
+import socket, serial
 import time
 
 class TCPServer:
-    def __init__(self, host='0.0.0.0', port=9000, timeout=1):
+    def __init__(self, host='0.0.0.0', port=9001, timeout=1):
         self.host = host
         self.port = port
         self.timeout = timeout  # Timeout for send/recv
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        self.serial_device = serial.Serial("/dev/ttyACM0", 115200, timeout=0.5)
 
     def start(self):
         self.server_socket.bind((self.host, self.port))
@@ -32,9 +34,8 @@ class TCPServer:
                     print("Client disconnected")
                     break
 
-                # Process the received data
-                print(f"{time.time()} - {data.decode('utf-8')}\n")
-
+                print(data.decode('utf-8'))
+                self.serial_device.write(data)
         except BrokenPipeError:
             print("BrokenPipeError: Client disconnected abruptly.")
         

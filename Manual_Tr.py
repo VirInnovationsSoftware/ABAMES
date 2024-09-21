@@ -11,12 +11,12 @@ refpt = []
 tr_log = 0
 
 
-# Initialize COM Port
-try:
-    ser = serial.Serial(f'{sys.argv[1]}', 115200, timeout=1)
-except serial.SerialException as e:
-    print(f"Error: Could not open COM port: {e}")
-    sys.exit(1)
+# # Initialize COM Port
+# try:
+#     ser = serial.Serial(f'{sys.argv[1]}', 115200, timeout=1)
+# except serial.SerialException as e:
+#     print(f"Error: Could not open COM port: {e}")
+#     sys.exit(1)
 
 # Arduino map function equivalent
 def arduino_map(x, in_min, in_max, out_min, out_max):
@@ -132,7 +132,7 @@ def manual_tracker_CSRT_main():
                 #binary_packet = struct.pack(format_string, 0, 0, 0,0, 0, 0)
                 binary_packet = struct.pack(format_string, char, az, chara, el, 0, 0)
                 print(f"Sent: {char, az, chara, el}")
-                ser.write(binary_packet)
+                # ser.write(binary_packet)
                 i=i+1
                 # sys.exit(0)
 

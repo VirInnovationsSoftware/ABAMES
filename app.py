@@ -40,21 +40,51 @@ QPushButton{
 class commandClient(QThread):
     def __init__(self, address):
         super().__init__()
-    
+        self.host, self.port = address
+        self.client = None
+        self.running = True
+
     def run(self):
-        while True:
-            self.msleep(1000)
-    
+        while self.running:
+            try:
+                if not self.client:
+                    self.connect_to_server()
+
+                self.msleep(1)  # Prevent busy-waiting
+
+            except (ConnectionResetError, BrokenPipeError):
+                print("Disconnected from server, attempting to reconnect...")
+                self.client.close()
+                self.client = None  # Reset the client for a new connection
+
+    def connect_to_server(self):
+        while self.client is None:
+            try:
+                self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.client.connect((self.host, self.port))
+                print("Connected to server.")
+            except Exception:
+                print("Connection failed, retrying in 5 seconds...")
+                self.msleep(5)
+
     def sendPlatformCommand(self, command):
-        # print(command)
-        pass
-    
+        if self.client:
+            # print(f"Sending command: {command}")
+            try:
+                self.client.send(command.encode('utf-8'))
+            except BrokenPipeError:
+                print("Failed to send command, connection may be closed.")
+
     def close(self):
-        pass
+        self.running = False
+        if self.client:
+            self.client.close()
+        self.quit()  # Exit the thread
+        self.wait()  # Wait for the thread to finish
     
 class CameraStreamerClient(QThread):
     pixmapSignal = pyqtSignal(QPixmap)
-    commandSignal = pyqtSignal(tuple)
+    commandSignal = pyqtSignal(str)
     
     def __init__(self, address, device_id_text):
         super().__init__()
@@ -66,13 +96,13 @@ class CameraStreamerClient(QThread):
             print(f"[{self.device_id_text}] [Init] Exception: {e}")
             
         self.frame_count = 0
-        self.frame_skip = 3
+        self.frame_skip = 1
 
         self.bboxUpdated = False
         self.trackerBox = None
         
         self.isTracking = False
-        self.tracker = cv2.TrackerCSRT_create()
+        self.tracker = cv2.legacy_TrackerCSRT.create()
         
         self.defaultFrameCenter = (320, 240)
         self.frameCenter = (320, 240)
@@ -82,9 +112,9 @@ class CameraStreamerClient(QThread):
         
     def enableTracking(self, box):
         self.isTracking = False
+        self.msleep(100)
         self.trackBox = box
         self.bboxUpdated = True
-        self.frame_count = 0
                 
     def disableTracking(self):
         self.isTracking = False
@@ -92,7 +122,6 @@ class CameraStreamerClient(QThread):
     def run(self):
         while True:
             try:
-                start = time.time()
                 self.sock_fd.sendto(b"data", self.address)
                 
                 self.sock_fd.settimeout(0.5)
@@ -104,42 +133,46 @@ class CameraStreamerClient(QThread):
                 
                 self.sock_fd.settimeout(None)
                 
-                if self.isTracking and self.trackBox is not None:
-                    self.frame_count += 1
-                    if self.frame_count % self.frame_skip == 0:
-                        print(self.frame_count)
-                        _, self.trackBox = self.tracker.update(frame)
-
-                        if _:
-                            # x_dir, y_dir = 0, 0
-                            # if center_x < 0:
-                            #     x_dir = 1
-                            #     center_x /=  self.frameCenter[0]
-                            # else:
-                            #     x_dir = 0
-                            #     center_x /= 640 - self.frameCenter[0]
-                            
-                            # if center_y < 0:
-                            #     y_dir = 1
-                            #     center_y /=  self.frameCenter[1]
-                            # else:
-                            #     y_dir = 0
-                            #     center_y /= 480 - self.frameCenter[1]
-                                
-                            # center_x *= 85000
-                            # center_y *= 200
-                            
-                            self.commandSignal.emit((int(self.trackBox[0] + self.trackBox[2] / 2) - self.frameCenter[0], int(self.trackBox[1] + self.trackBox[3] / 2) - self.frameCenter[1]))
-                            
-                            cv2.rectangle(frame, (int(self.trackBox[0]), int(self.trackBox[1])), (int(self.trackBox[0] + self.trackBox[2]), int(self.trackBox[1] + self.trackBox[3])), (255, 0, 0), 2, 1)
-
-                        else:
-                            self.isTracking = False                        
-                
                 if self.bboxUpdated:
+                    self.tracker = None
+                    self.tracker = cv2.legacy_TrackerCSRT.create()
                     self.tracker.init(frame, self.trackBox)
+
                     self.bboxUpdated = False
                     self.isTracking = True
+
+                if self.isTracking and self.trackBox is not None:
+                    _, self.trackBox = self.tracker.update(frame)
+                    if _:
+                        center_x, center_y = (int(self.trackBox[0] + self.trackBox[2] / 2) - self.frameCenter[0], int(self.trackBox[1] + self.trackBox[3] / 2) - self.frameCenter[1])
+                        x_dir, y_dir = 0, 0
+                        if center_x < 0:
+                            x_dir = 1
+                            center_x /=  self.frameCenter[0]
+                        else:
+                            x_dir = 0
+                            center_x /= 640 - self.frameCenter[0]
+
+                        
+                        if center_y < 0:
+                            y_dir = 1
+                            center_y /=  self.frameCenter[1]
+                        else:
+                            y_dir = 0
+                            center_y /= 480 - self.frameCenter[1]
+
+                        center_x = abs(center_x)
+                        center_y = abs(center_y)
+                            
+                        center_x *= 85000
+                        center_y *= 200
+                        
+                        self.commandSignal.emit(f"${x_dir}, {int(center_x)}, {y_dir}, {int(center_y)}, {0}\n")
+                        
+                        cv2.rectangle(frame, (int(self.trackBox[0]), int(self.trackBox[1])), (int(self.trackBox[0] + self.trackBox[2]), int(self.trackBox[1] + self.trackBox[3])), (255, 0, 0), 2, 1)
+
+                    else:
+                        self.isTracking = False
                 
                 # Convert OpenCV frame (BGR) to RGB
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -150,9 +183,6 @@ class CameraStreamerClient(QThread):
 
                 # Emit the signal with the QPixmap
                 self.pixmapSignal.emit(QPixmap.fromImage(QImage(rgb_frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)))
-                
-                end = time.time()
-                print(f"processing tracking took: {(end - start) * 1000}ms")
                 
             except Exception as e:
                 print(f"[{self.device_id_text}] [Main Loop] Exception: {e}")
@@ -167,8 +197,8 @@ class Application(QMainWindow):
         super().__init__()
         uic.loadUi("design.ui", self)
         
-        self.camera_client = CameraStreamerClient(("127.0.0.1", 9000), "camera-streamer-client")
-        self.command_client = commandClient(("127.0.0.1", 9000))
+        self.camera_client = CameraStreamerClient(("192.168.0.150", 9000), "camera-streamer-client")
+        self.command_client = commandClient(("192.168.0.150", 9001))
         
         self.camera_client.pixmapSignal.connect(self.StreamLabel.setPixmap)
         self.manualMouseBBoxSignal.connect(self.camera_client.enableTracking)

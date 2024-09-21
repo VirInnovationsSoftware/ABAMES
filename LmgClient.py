@@ -2,9 +2,10 @@ import socket
 import time
 
 class TCPClient:
-    def __init__(self, host='127.0.0.1', port=9000, timeout=10):
+    def __init__(self, host='192.168.0.150', port=9001, timeout=10):
         self.host = host
         self.port = port
+        print(host, port)
         self.timeout = timeout  # Timeout for the client socket
         self.client_socket = None
         self._connect()
@@ -33,24 +34,8 @@ class TCPClient:
 
     def send_zoom_preset_command(self, preset):
         try:
-            self.client_socket.sendall(f"zpreset; {int(preset)}".encode('utf-8'))
-            print(f"Sent message: zpreset; {int(preset)}")
-            return  # Exit the loop if the message is sent successfully
-
-        except socket.timeout:
-            print("Socket timeout occurred. Reconnecting...")
-            self._reconnect()
-        except BrokenPipeError:
-            print("BrokenPipeError: Server disconnected abruptly. Reconnecting...")
-            self._reconnect()
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-
-
-    def send_mouse_position(self, position):
-        try:
-            self.client_socket.sendall(f"mpos; {position[0]}, {position[1]}".encode('utf-8'))
-            print(f"Sent message: mpos; {position[0]}, {position[1]}")
+            self.client_socket.sendall(f"client@{time.time()} zpreset; {int(preset)}".encode('utf-8'))
+            # print(f"{time.time()} @ client zpreset; {int(preset)}".encode('utf-8'))
             return  # Exit the loop if the message is sent successfully
 
         except socket.timeout:
@@ -69,5 +54,6 @@ class TCPClient:
 
 # Example usage
 if __name__ == "__main__":
-    client = TCPClient(host='127.0.0.1', port=9000)  # Adjust host and port if needed
-    client.send_mouse_position((100, 100))
+    client = TCPClient()  # Adjust host and port if needed
+    while True:
+        client.send_zoom_preset_command(100)

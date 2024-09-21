@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
   std::chrono::duration<double, std::milli> elapsed;
 
   while (true) {
-    // start = std::chrono::high_resolution_clock::now();
+     start = std::chrono::high_resolution_clock::now();
     // cap >> frame;
     cap.read(frame);
 
@@ -114,12 +114,12 @@ int main(int argc, char **argv) {
       cap.open(camera_device);
       continue;
     }
-    // end = std::chrono::high_resolution_clock::now();
-    // elapsed =
-    //     std::chrono::duration_cast<std::chrono::duration<double,
-    //     std::milli>>(
-    //         end - start);
-    // printf("reading frame: %f ms\t", elapsed.count());
+     end = std::chrono::high_resolution_clock::now();
+     elapsed =
+         std::chrono::duration_cast<std::chrono::duration<double,
+         std::milli>>(
+             end - start);
+      printf("reading frame: %f ms\n", elapsed.count());
 
     // start = std::chrono::high_resolution_clock::now();
 
