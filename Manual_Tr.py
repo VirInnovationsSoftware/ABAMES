@@ -82,9 +82,9 @@ def manual_tracker_CSRT_main():
     while True:
         start_time = time.perf_counter()
         ret, frame = vs.read()
-        frame = cv2.resize(frame, (1280, 720))
+        # frame = cv2.resize(frame, (1280, 720))
 
-        print(f"Sent No of Times:",i)
+        # print(f"Sent No of Times:",i)
         if not ret:
             print("Failed to grab frame. Reinitializing video stream.")
             vs.release()
@@ -100,7 +100,7 @@ def manual_tracker_CSRT_main():
                 (x, y, w, h) = [int(v) for v in box]
                 b = (y + h / 2) - (H / 2)
                 a = (x + w / 2) - (W / 2)
-                print ("Pixel Error :",(a,b))
+                # print ("Pixel Error :",(a,b))
 
                 if b < 0:
                     el = arduino_map(b, -(H / 2), 0, 150, 0)
@@ -131,7 +131,7 @@ def manual_tracker_CSRT_main():
                 format_string = 'BBBBIf'
                 #binary_packet = struct.pack(format_string, 0, 0, 0,0, 0, 0)
                 binary_packet = struct.pack(format_string, char, az, chara, el, 0, 0)
-                print(f"Sent: {char, az, chara, el}")
+                # print(f"Sent: {char, az, chara, el}")
                 # ser.write(binary_packet)
                 i=i+1
                 # sys.exit(0)
