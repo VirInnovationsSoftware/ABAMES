@@ -44,13 +44,19 @@ class commandClient(QThread):
         self.client = None
         self.running = True
 
+        self.max_pan_speed = 65000
+        self.max_tilt_speed = 255
+
+    def qunticOut(self, maxActualValue, value):
+        return maxActualValue * (1 - (1 - value) ** 2.5)
+
     def run(self):
         while self.running:
             try:
                 if not self.client:
                     self.connect_to_server()
 
-                self.msleep(1)  # Prevent busy-waiting
+                self.msleep(10)
 
             except (ConnectionResetError, BrokenPipeError):
                 print("Disconnected from server, attempting to reconnect...")
@@ -71,7 +77,18 @@ class commandClient(QThread):
         if self.client:
             # print(f"Sending command: {command}")
             try:
-                self.client.send(command.encode('utf-8'))
+                if command[1] > 0.0:
+                    panVal = int(self.qunticOut(85000, command[1]))
+                else:
+                    panVal = 0
+
+                if command[3] > 0.0:
+                    tiltVal = int(self.qunticOut(255, command[3]))
+                else:
+                    tiltVal = 0
+
+                print(f"${command[0]}, {panVal}, {command[2]}, {tiltVal}, {command[4]}\n")
+                self.client.send(f"${command[0]}, {panVal}, {command[2]}, {tiltVal}, {command[4]}\n".encode('utf-8'))
             except BrokenPipeError:
                 print("Failed to send command, connection may be closed.")
 
@@ -81,22 +98,13 @@ class commandClient(QThread):
             self.client.close()
         self.quit()  # Exit the thread
         self.wait()  # Wait for the thread to finish
-    
-class CameraStreamerClient(QThread):
+
+class Tracker(QThread):
     pixmapSignal = pyqtSignal(QPixmap)
-    commandSignal = pyqtSignal(str)
-    
-    def __init__(self, address, device_id_text):
+    commandSignal = pyqtSignal(list)
+
+    def __init__(self):
         super().__init__()
-        try:
-            self.device_id_text = device_id_text # for degugging
-            self.address = address
-            self.sock_fd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        except Exception as e:
-            print(f"[{self.device_id_text}] [Init] Exception: {e}")
-            
-        self.frame_count = 0
-        self.frame_skip = 1
 
         self.bboxUpdated = False
         self.trackerBox = None
@@ -118,15 +126,85 @@ class CameraStreamerClient(QThread):
                 
     def disableTracking(self):
         self.isTracking = False
-        self.commandSignal.emit(f"${0}, {0}, {0}, {0}, {0}\n")
+        self.msleep(250)
+        self.commandSignal.emit([0,0,0,0,0])
         print("disabled tracking")
+
+    def run(self):
+        while True:
+            self.msleep(1000)
+
+    def updateTracker(self, frame):
+        if self.bboxUpdated:
+            self.tracker = None
+            self.tracker = cv2.legacy_TrackerCSRT.create()
+            self.tracker.init(frame, self.trackBox)
+
+            self.bboxUpdated = False
+            self.isTracking = True
+
+        if self.isTracking and self.trackBox is not None:
+            _, self.trackBox = self.tracker.update(frame)
+            if _:
+                center_x, center_y = (int(self.trackBox[0] + self.trackBox[2] / 2) - self.frameCenter[0], int(self.trackBox[1] + self.trackBox[3] / 2) - self.frameCenter[1])
+                x_dir, y_dir = 0, 0
+                if center_x < 0:
+                    x_dir = 1
+                    center_x /=  self.frameCenter[0]
+                else:
+                    x_dir = 0
+                    center_x /= 640 - self.frameCenter[0]
+
+                
+                if center_y < 0:
+                    y_dir = 1
+                    center_y /=  self.frameCenter[1]
+                else:
+                    y_dir = 0
+                    center_y /= 480 - self.frameCenter[1]
+
+                center_x = abs(center_x)
+                center_y = abs(center_y)
+                    
+                # center_x *= 85000
+                # center_y *= 200
+                
+                self.commandSignal.emit([x_dir, center_x, y_dir, center_y, 0])
+                
+                cv2.rectangle(frame, (int(self.trackBox[0]), int(self.trackBox[1])), (int(self.trackBox[0] + self.trackBox[2]), int(self.trackBox[1] + self.trackBox[3])), (255, 0, 0), 2, 1)
+
+            else:
+                self.isTracking = False
+                self.commandSignal.emit([0,0,0,0,0])
+
+        # Convert OpenCV frame (BGR) to RGB
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        # Convert OpenCV frame to QImage
+        height, width, channels = rgb_frame.shape
+        bytes_per_line = channels * width
+
+        # Emit the signal with the QPixmap
+        self.pixmapSignal.emit(QPixmap.fromImage(QImage(rgb_frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)))
+
+class CameraStreamerClient(QThread):
+    frameSignal = pyqtSignal(np.ndarray)
+    
+    def __init__(self, address, device_id_text):
+        super().__init__()
+        try:
+            self.device_id_text = device_id_text # for degugging
+            self.address = address
+            self.sock_fd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        except Exception as e:
+            print(f"[{self.device_id_text}] [Init] Exception: {e}")
 
     def run(self):
         while True:
             try:
                 self.sock_fd.sendto(b"data", self.address)
                 
-                self.sock_fd.settimeout(0.5)
+                self.sock_fd.settimeout(0.05)
 
                 size, _ = self.sock_fd.recvfrom(4)
                 size = struct.unpack("!I", size)[0]
@@ -135,61 +213,10 @@ class CameraStreamerClient(QThread):
                 
                 self.sock_fd.settimeout(None)
                 
-                if self.bboxUpdated:
-                    self.tracker = None
-                    self.tracker = cv2.legacy_TrackerCSRT.create()
-                    self.tracker.init(frame, self.trackBox)
-
-                    self.bboxUpdated = False
-                    self.isTracking = True
-
-                if self.isTracking and self.trackBox is not None:
-                    _, self.trackBox = self.tracker.update(frame)
-                    if _:
-                        center_x, center_y = (int(self.trackBox[0] + self.trackBox[2] / 2) - self.frameCenter[0], int(self.trackBox[1] + self.trackBox[3] / 2) - self.frameCenter[1])
-                        x_dir, y_dir = 0, 0
-                        if center_x < 0:
-                            x_dir = 1
-                            center_x /=  self.frameCenter[0]
-                        else:
-                            x_dir = 0
-                            center_x /= 640 - self.frameCenter[0]
-
-                        
-                        if center_y < 0:
-                            y_dir = 1
-                            center_y /=  self.frameCenter[1]
-                        else:
-                            y_dir = 0
-                            center_y /= 480 - self.frameCenter[1]
-
-                        center_x = abs(center_x)
-                        center_y = abs(center_y)
-                            
-                        center_x *= 85000
-                        center_y *= 200
-                        
-                        self.commandSignal.emit(f"${x_dir}, {int(center_x)}, {y_dir}, {int(center_y)}, {0}\n")
-                        
-                        cv2.rectangle(frame, (int(self.trackBox[0]), int(self.trackBox[1])), (int(self.trackBox[0] + self.trackBox[2]), int(self.trackBox[1] + self.trackBox[3])), (255, 0, 0), 2, 1)
-
-                    else:
-                        self.isTracking = False
-                        self.commandSignal.emit(f"${0}, {0}, {0}, {0}, {0}\n")
-
-                # Convert OpenCV frame (BGR) to RGB
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                # Convert OpenCV frame to QImage
-                height, width, channels = rgb_frame.shape
-                bytes_per_line = channels * width
-
-                # Emit the signal with the QPixmap
-                self.pixmapSignal.emit(QPixmap.fromImage(QImage(rgb_frame.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)))
+                self.frameSignal.emit(frame)
                 
             except Exception as e:
                 print(f"[{self.device_id_text}] [Main Loop] Exception: {e}")
-                pass
 
     def close(self):
         self.sock_fd.close()
@@ -204,11 +231,16 @@ class Application(QMainWindow):
         
         self.camera_client = CameraStreamerClient(("192.168.0.150", 9000), "camera-streamer-client")
         self.command_client = commandClient(("192.168.0.150", 9001))
-        
-        self.camera_client.pixmapSignal.connect(self.StreamLabel.setPixmap)
-        self.manualMouseBBoxSignal.connect(self.camera_client.enableTracking)
-        self.camera_client.commandSignal.connect(self.command_client.sendPlatformCommand, type=Qt.ConnectionType.DirectConnection)
-        self.disableTrackingSignal.connect(self.camera_client.disableTracking)
+        self.trackerClient = Tracker()
+
+        self.camera_client.frameSignal.connect(self.trackerClient.updateTracker, type=Qt.ConnectionType.DirectConnection)
+        # self.camera_client.frameSignal.connect(self.trackerClient.updateTracker)
+
+        self.trackerClient.pixmapSignal.connect(self.StreamLabel.setPixmap)
+        self.trackerClient.commandSignal.connect(self.command_client.sendPlatformCommand)
+
+        self.manualMouseBBoxSignal.connect(self.trackerClient.enableTracking)
+        self.disableTrackingSignal.connect(self.trackerClient.disableTracking)
         
         self.camera_client.start()
         self.command_client.start()
