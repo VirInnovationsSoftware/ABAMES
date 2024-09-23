@@ -118,6 +118,8 @@ class CameraStreamerClient(QThread):
                 
     def disableTracking(self):
         self.isTracking = False
+        self.commandSignal.emit(f"${0}, {0}, {0}, {0}, {0}\n")
+        print("disabled tracking")
 
     def run(self):
         while True:
@@ -173,7 +175,8 @@ class CameraStreamerClient(QThread):
 
                     else:
                         self.isTracking = False
-                
+                        self.commandSignal.emit(f"${0}, {0}, {0}, {0}, {0}\n")
+
                 # Convert OpenCV frame (BGR) to RGB
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -193,6 +196,8 @@ class CameraStreamerClient(QThread):
 
 class Application(QMainWindow):
     manualMouseBBoxSignal = pyqtSignal(list)
+    disableTrackingSignal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         uic.loadUi("design.ui", self)
@@ -203,6 +208,7 @@ class Application(QMainWindow):
         self.camera_client.pixmapSignal.connect(self.StreamLabel.setPixmap)
         self.manualMouseBBoxSignal.connect(self.camera_client.enableTracking)
         self.camera_client.commandSignal.connect(self.command_client.sendPlatformCommand, type=Qt.ConnectionType.DirectConnection)
+        self.disableTrackingSignal.connect(self.camera_client.disableTracking)
         
         self.camera_client.start()
         self.command_client.start()
@@ -274,6 +280,13 @@ class Application(QMainWindow):
             
             # emit bbox
             self.manualMouseBBoxSignal.emit([int(x-boxSize), int(y-boxSize), boxSize*2, boxSize*2])
+
+    def keyReleaseEvent(self, event):
+        match event.text():
+            case 'a':
+                self.disableTrackingSignal.emit()
+            case _:
+                print("Invalid Key")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
