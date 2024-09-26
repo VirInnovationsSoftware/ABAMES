@@ -87,7 +87,7 @@ class commandClient(QThread):
                 else:
                     tiltVal = 0
 
-                print(f"${command[0]}, {panVal}, {command[2]}, {tiltVal}, {command[4]}\n")
+                # print(f"${command[0]}, {panVal}, {command[2]}, {tiltVal}, {command[4]}\n")
                 self.client.send(f"${command[0]}, {panVal}, {command[2]}, {tiltVal}, {command[4]}\n".encode('utf-8'))
             except BrokenPipeError:
                 print("Failed to send command, connection may be closed.")
@@ -224,6 +224,7 @@ class CameraStreamerClient(QThread):
 class Application(QMainWindow):
     manualMouseBBoxSignal = pyqtSignal(list)
     disableTrackingSignal = pyqtSignal()
+    manualPlatformCommand = pyqtSignal(list)
 
     def __init__(self):
         super().__init__()
@@ -238,6 +239,7 @@ class Application(QMainWindow):
 
         self.trackerClient.pixmapSignal.connect(self.StreamLabel.setPixmap)
         self.trackerClient.commandSignal.connect(self.command_client.sendPlatformCommand)
+        self.manualPlatformCommand.connect(self.command_client.sendPlatformCommand)
 
         self.manualMouseBBoxSignal.connect(self.trackerClient.enableTracking)
         self.disableTrackingSignal.connect(self.trackerClient.disableTracking)
@@ -247,50 +249,67 @@ class Application(QMainWindow):
 
         self.setBtnInputSlots()
         
-        self.changeModeToJoystick()
+        self.changeModeToJoystick()       
 
     def cursorUpPressed(self):
+        self.manualPlatformCommand.emit([0, 0.0, 0, 0.5, 0])
+        print([0, 0.0, 0, 0.5, 0])
         pass
     
     def cursorDownPressed(self):
+        self.manualPlatformCommand.emit([0, 0.0, 1, 0.5, 0])
+        print([0, 0.0, 1, 0.5, 0])
         pass
     
     def cursorLeftPressed(self):
+        self.manualPlatformCommand.emit([0, 0.5, 0, 0.0, 0])
+        print([0, 0.5, 0, 0.0, 0])
         pass
     
     def cursorRightPressed(self):
+        self.manualPlatformCommand.emit([1, 0.5, 0, 0.0, 0])
+        print([1, 0.5, 0, 0.0, 0])
         pass
     
     def cursorSavePressed(self):
         pass
     
+    def sendPlatformStopCommand(self):
+        self.manualPlatformCommand.emit([0, 0, 0, 0, 0])
+
     def changeModeToAuto(self):
         self.MODE = 1
         self.ModeAutoBtn.setStyleSheet(MODE_SELECTED_STYLESHEET)
-        
+
         self.ModeJoystickBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)
         self.ModeManualBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)        
 
     def changeModeToManual(self):
         self.MODE = 2
         self.ModeManualBtn.setStyleSheet(MODE_SELECTED_STYLESHEET)
-        
+
         self.ModeJoystickBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)
         self.ModeAutoBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)
 
     def changeModeToJoystick(self):
         self.MODE = 3
         self.ModeJoystickBtn.setStyleSheet(MODE_SELECTED_STYLESHEET)
-        
+
         self.ModeAutoBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)
         self.ModeManualBtn.setStyleSheet(MODE_UNSELECTED_STYLESHEET)
-    
+
     def setBtnInputSlots(self):
-        self.CursorUpBtn.clicked.connect(self.cursorUpPressed)
-        self.CursorDownBtn.clicked.connect(self.cursorDownPressed)
-        self.CursorLeftBtn.clicked.connect(self.cursorLeftPressed)
-        self.CursorRightBtn.clicked.connect(self.cursorRightPressed)
-        self.CursorSaveBtn.clicked.connect(self.cursorSavePressed)
+        self.CursorUpBtn.pressed.connect(self.cursorUpPressed)
+        self.CursorDownBtn.pressed.connect(self.cursorDownPressed)
+        self.CursorLeftBtn.pressed.connect(self.cursorLeftPressed)
+        self.CursorRightBtn.pressed.connect(self.cursorRightPressed)
+        # self.CursorSaveBtn.clicked.connect(self.cursorSavePressed)
+
+        self.CursorUpBtn.released.connect(self.sendPlatformStopCommand)
+        self.CursorDownBtn.released.connect(self.sendPlatformStopCommand)
+        self.CursorLeftBtn.released.connect(self.sendPlatformStopCommand)
+        self.CursorRightBtn.released.connect(self.sendPlatformStopCommand)
+        # self.CursorSaveBtn.released.connect(self.sendPlatformStopCommand)
 
         self.ModeAutoBtn.clicked.connect(self.changeModeToAuto)
         self.ModeManualBtn.clicked.connect(self.changeModeToManual)
@@ -306,16 +325,33 @@ class Application(QMainWindow):
             elif x > 590: x = 590
             if y < boxSize: y = boxSize
             elif y > 430: y = 430
-            
+
             # adjust mouse position according to pixmap position on window
             y -= boxSize
-            
+
             # emit bbox
             self.manualMouseBBoxSignal.emit([int(x-boxSize), int(y-boxSize), boxSize*2, boxSize*2])
 
+    # def keyPressEvent(self, event):
+    #     key = event.text()
+    #     if key not in self.pressed_keys:  # Only process if the key isn't already pressed
+    #         self.pressed_keys.add(key)  # Mark the key as pressed
+    #         match key:
+    #             case 'a':  # LEFT
+    #                 self.manualPlatformCommand.emit([0, 0.5, 0, 0.0, 0])
+    #             case 'd':  # RIGHT
+    #                 self.manualPlatformCommand.emit([1, 0.5, 0, 0.0, 0])
+    #             case 'w':  # UP
+    #                 self.manualPlatformCommand.emit([0, 0.0, 0, 0.5, 0])
+    #             case 's':  # DOWN
+    #                 self.manualPlatformCommand.emit([0, 0.0, 1, 0.5, 0])
+    #             case _:
+    #                 print("Invalid Key")
+
     def keyReleaseEvent(self, event):
-        match event.text():
-            case 'a':
+        key = event.text()
+        match key:
+            case 'c':
                 self.disableTrackingSignal.emit()
             case _:
                 print("Invalid Key")

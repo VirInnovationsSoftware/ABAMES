@@ -1,0 +1,19 @@
+  File "/home/lmg/Documents/ABAMES/detection_auto.py", line 78, in <module>
+    results = model(frame, conf=0.5)
+  File "/home/lmg/.local/lib/python3.10/site-packages/ultralytics/engine/model.py", line 176, in __call__
+    return self.predict(source, stream, **kwargs)
+  File "/home/lmg/.local/lib/python3.10/site-packages/ultralytics/engine/model.py", line 555, in predict
+    return self.predictor.predict_cli(source=source) if is_cli else self.predictor(source=source, stream=stream)
+  File "/home/lmg/.local/lib/python3.10/site-packages/ultralytics/engine/predictor.py", line 168, in __call__
+    return list(self.stream_inference(source, model, *args, **kwargs))  # merge list of Result into one
+  File "/home/lmg/.local/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 35, in generator_context
+    response = gen.send(None)
+  File "/home/lmg/.local/lib/python3.10/site-packages/ultralytics/engine/predictor.py", line 234, in stream_inference
+    self.model.warmup(imgsz=(1 if self.model.pt or self.model.triton else self.dataset.bs, 3, *self.imgsz))
+  File "/home/lmg/.local/lib/python3.10/site-packages/ultralytics/nn/autobackend.py", line 633, in warmup
+    import torchvision  # noqa (import here so torchvision import time not recorded in postprocess time)
+  File "/home/lmg/.local/lib/python3.10/site-packages/torchvision/__init__.py", line 10, in <module>
+    from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
+  File "/home/lmg/.local/lib/python3.10/site-packages/torchvision/_meta_registrations.py", line 163, in <module>
+    @torch.library.register_fake("torchvision::nms")
+AttributeError: module 'torch.library' has no attribute 'register_fake'

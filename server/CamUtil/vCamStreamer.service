@@ -1,0 +1,11 @@
+[Unit]
+Description=Vir Camera Streamer Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/lmg_rpi/Documents/CamUtil/run-service.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
